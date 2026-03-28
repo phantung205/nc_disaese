@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Virtual Environment
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+
+# Data
+data/raw/
+data/processed/
+*.csv
+
+# Models
+models/
+*.pkl
+*.joblib
+
+
