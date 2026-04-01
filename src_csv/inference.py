@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import joblib
-from src import config, preprocessing
+from src_csv import config, preprocessing
 
 
 

@@ -1,0 +1,93 @@
+import torch
+import torch.nn as nn
+from src_images import config
+import torchvision.models as models
+
+class Residuablock(nn.Module):
+    def __init__(self,in_channels,out_channels):
+        super().__init__()
+
+        # cnn path
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=3,stride=1,padding=1),
+            nn.BatchNorm2d(num_features=out_channels),
+            nn.LeakyReLU(),
+            nn.Conv2d(in_channels=out_channels,out_channels=out_channels,kernel_size=3,stride=1,padding=1),
+            nn.BatchNorm2d(num_features=out_channels)
+        )
+
+        #skip connection
+        self.skip = nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=1)
+
+        # add activation
+        self.activation = nn.LeakyReLU()
+
+        #reduce size
+        self.pool  = nn.MaxPool2d(2)
+
+    def forward(self,x):
+        identity = self.skip(x)
+        out = self.conv(x)
+        out = out + identity
+        out = self.activation(out)
+        out = self.pool(out)
+
+        return out
+
+
+class DiabeticRetinopathy(nn.Module):
+    def __init__(self,num_classes = len(config.categorys)):
+        super().__init__()
+        self.block1 = Residuablock(3,8)
+        self.block2 = Residuablock(8,16)
+        self.block3 = Residuablock(16,32)
+        self.block4 = Residuablock(32,64)
+        self.block5 = Residuablock(64,128)
+
+        self.global_pool = nn.AdaptiveAvgPool2d(1)
+
+        self.fc = nn.Sequential(
+            nn.Linear(128, 256),
+            nn.LeakyReLU(),
+            nn.Dropout(0.5),
+
+            nn.Linear(256, num_classes)
+        )
+
+    def forward(self,x):
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
+        x = self.block4(x)
+        x = self.block5(x)
+        x = self.global_pool(x)
+
+        x = torch.flatten(x, 1)
+
+        x = self.fc(x)
+        return x
+
+
+
+class DiabeticRetinopathyPretrain(nn.Module):
+    def __init__(self, num_classes=len(config.categorys)):
+        super().__init__()
+
+        self.model = models.resnet34(pretrained=True)
+
+        for param in self.model.parameters():
+            param.requires_grad = False
+
+        in_features = self.model.fc.in_features
+        self.model.fc = nn.Sequential(
+            nn.Linear(in_features, 256),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(256, num_classes)
+        )
+
+        for param in self.model.fc.parameters():
+            param.requires_grad = True
+
+    def forward(self, x):
+        return self.model(x)

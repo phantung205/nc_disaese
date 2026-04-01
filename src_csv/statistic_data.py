@@ -1,6 +1,6 @@
 import os.path
 
-from src import config
+from src_csv import config
 from ydata_profiling import  ProfileReport
 import pandas as pd
 

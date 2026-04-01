@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash, sen
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
-from src import inference, config
+from src_csv import inference, config
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Thay đổi thành key bảo mật

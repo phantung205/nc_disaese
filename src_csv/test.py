@@ -2,7 +2,7 @@ import argparse
 import pandas as pd
 import os
 import joblib
-from src import config,preprocessing
+from src_csv import config,preprocessing
 from sklearn.metrics import classification_report, roc_auc_score
 
 def parse_args():

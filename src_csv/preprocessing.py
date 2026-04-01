@@ -1,6 +1,6 @@
 from sklearn.model_selection import train_test_split
 import pandas as pd
-from src import config
+from src_csv import config
 import os
 
 

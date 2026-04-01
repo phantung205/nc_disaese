@@ -22,5 +22,7 @@ data/processed/
 models/
 *.pkl
 *.joblib
+trained_models/
+reports/tensorboard/
 
 

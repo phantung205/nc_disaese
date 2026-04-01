@@ -1,7 +1,7 @@
 import os
 import joblib
 from sklearn.compose import  ColumnTransformer
-from src import preprocessing, config
+from src_csv import preprocessing, config
 import argparse
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler,OrdinalEncoder,OneHotEncoder
