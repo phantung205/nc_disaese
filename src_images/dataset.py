@@ -1,12 +1,49 @@
 from torchvision.datasets import ImageFolder
 from src_images import config
-from torch.utils.data import DataLoader
-from torchvision.transforms import Compose,RandomAffine,Resize,ToTensor,Normalize,RandomHorizontalFlip,ColorJitter
+from torch.utils.data import DataLoader,Dataset
+from torchvision.transforms import Compose,RandomAffine,Resize,ToTensor,Normalize,RandomHorizontalFlip,RandomRotation,ColorJitter
+import os
+from PIL import Image
 
+class DiabeticRetinopathyDataset(Dataset):
+    def __init__(self,root,train=True,transform=None):
+        if train:
+            mode = "train"
+        else:
+            mode = "val"
+
+        root = os.path.join(root,mode)
+        self.transform = transform
+        self.categories = config.categorys
+
+        self.images_paths = []
+        self.labels = []
+
+        for idx, category in enumerate(self.categories):
+            data_file_path = os.path.join(root,category)
+            for file_name in os.listdir(data_file_path):
+                file_path = os.path.join(data_file_path,file_name)
+                self.images_paths.append(file_path)
+                self.labels.append(idx)
+
+    def __len__(self):
+        return  len(self.labels)
+
+    def __getitem__(self, item):
+        image_path = self.images_paths[item]
+
+        image = Image.open(image_path).convert("RGB")
+        if self.transform:
+            image = self.transform(image)
+
+        label = self.labels[item]
+        return image, label
 
 def dataloader(batch_size,image_size):
-    train_transfrom = Compose([
+    train_transform = Compose([
         Resize((image_size, image_size)),
+        RandomHorizontalFlip(p=0.5),
+        RandomRotation(15),
         RandomAffine(
             degrees=10,
             translate=(0.03, 0.03),
@@ -14,17 +51,18 @@ def dataloader(batch_size,image_size):
             shear=3
         ),
         ColorJitter(
-            brightness=0.2,
-            contrast=0.2,
-            saturation=0.1
+            brightness=0.15,
+            contrast=0.15,
+            saturation=0.05,
+            hue=0.02
         ),
         ToTensor(),
         Normalize(
             mean=[0.485, 0.456, 0.406],
             std=[0.229, 0.224, 0.225]
-        )
+        ),
     ])
-    train_dataset = ImageFolder(root=config.data_train, transform=train_transfrom)
+    train_dataset = DiabeticRetinopathyDataset(config.data_processed_dir,train=True,transform=train_transform)
 
     val_transfrom = Compose([
         Resize((image_size, image_size)),
@@ -32,7 +70,7 @@ def dataloader(batch_size,image_size):
         Normalize(mean=[0.485, 0.456, 0.406],
                   std=[0.229, 0.224, 0.225])
     ])
-    val_dataset = ImageFolder(root=config.data_val,transform=val_transfrom)
+    val_dataset = DiabeticRetinopathyDataset(config.data_processed_dir,train=False,transform=val_transfrom)
 
     train_dataloader = DataLoader(
         dataset=train_dataset,

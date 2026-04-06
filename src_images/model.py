@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 from src_images import config
 import torchvision.models as models
-
 class Residuablock(nn.Module):
-    def __init__(self,in_channels,out_channels):
+    def __init__(self,in_channels,out_channels, downsample=True):
         super().__init__()
 
         # cnn path
@@ -17,13 +16,16 @@ class Residuablock(nn.Module):
         )
 
         #skip connection
-        self.skip = nn.Conv2d(in_channels=in_channels,out_channels=out_channels,kernel_size=1)
+        if in_channels != out_channels:
+            self.skip = nn.Conv2d(in_channels, out_channels, 1)
+        else:
+            self.skip = nn.Identity()
 
         # add activation
         self.activation = nn.LeakyReLU()
 
         #reduce size
-        self.pool  = nn.MaxPool2d(2)
+        self.pool = nn.MaxPool2d(2) if downsample else nn.Identity()
 
     def forward(self,x):
         identity = self.skip(x)
@@ -38,19 +40,19 @@ class Residuablock(nn.Module):
 class DiabeticRetinopathy(nn.Module):
     def __init__(self,num_classes = len(config.categorys)):
         super().__init__()
-        self.block1 = Residuablock(3,8)
-        self.block2 = Residuablock(8,16)
-        self.block3 = Residuablock(16,32)
-        self.block4 = Residuablock(32,64)
-        self.block5 = Residuablock(64,128)
+        self.block1 = Residuablock(3, 32)
+        self.block2 = Residuablock(32, 64)
+        self.block3 = Residuablock(64, 128)
+        self.block4 = Residuablock(128, 256)
+        self.block5 = Residuablock(256, 512, downsample=False)
 
         self.global_pool = nn.AdaptiveAvgPool2d(1)
 
         self.fc = nn.Sequential(
-            nn.Linear(128, 256),
-            nn.LeakyReLU(),
+            nn.Linear(512, 256),
+            nn.BatchNorm1d(256),
+            nn.SiLU(),
             nn.Dropout(0.5),
-
             nn.Linear(256, num_classes)
         )
 
@@ -66,7 +68,6 @@ class DiabeticRetinopathy(nn.Module):
 
         x = self.fc(x)
         return x
-
 
 
 class DiabeticRetinopathyPretrain(nn.Module):

@@ -6,7 +6,7 @@ import os
 import torch.nn as nn
 import shutil
 from torch.utils.tensorboard import SummaryWriter
-from torch.optim import AdamW
+from torch.optim import AdamW,SGD
 from tqdm import tqdm
 from sklearn.metrics import accuracy_score
 
@@ -17,6 +17,7 @@ def get_args():
     parser.add_argument("--epochs","-e",type=int,default=config.epochs,help="number epoch")
     parser.add_argument("--learning_rate","-r",type=float,default=config.learning_rate,help="number learning rate")
     parser.add_argument("--weight_decay","-w",type=float,default=config.weight_decay,help="number weight decay")
+    parser.add_argument("--momentom","-m",type=float,default=config.momentom,help="number momentom")
     parser.add_argument("--trained_models","-t",type=str,default=config.model_dir,help="model path ")
     parser.add_argument("--logging","-l",type=str,default=config.path_tensorboard,help="tensorboard path")
     parser.add_argument("--checkpoint","-c",type=str,default=None,help="checkpoint")
@@ -50,13 +51,11 @@ def train(args):
     criterion = nn.CrossEntropyLoss()
 
     # optimizer
-    optimizer = AdamW(model.parameters(),lr=args.learning_rate,weight_decay=args.weight_decay)
+    optimizer = SGD(model.parameters(),lr=args.learning_rate,momentum=args.momentom,weight_decay=args.weight_decay)
     # ko có cái
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer,
-        T_0=10,
-        T_mult=2,
-        eta_min=1e-6
+        T_max=args.epochs
     )
 
     num_iteration = len(train_dataloader)
