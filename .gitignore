@@ -25,4 +25,8 @@ models/
 trained_models/
 reports/tensorboard/
 
+#chat
+chat_bot/
+data_chat/
+
 

@@ -2,13 +2,13 @@ Model: Svm
 
               precision    recall  f1-score   support
 
-           0       0.86      0.56      0.68       100
-           1       0.51      0.83      0.63        54
+           0       0.87      0.71      0.78        76
+           1       0.59      0.80      0.68        40
 
-    accuracy                           0.66       154
-   macro avg       0.68      0.70      0.65       154
-weighted avg       0.74      0.66      0.66       154
+    accuracy                           0.74       116
+   macro avg       0.73      0.76      0.73       116
+weighted avg       0.77      0.74      0.75       116
 
-ROC-AUC: 0.7870
+ROC-AUC: 0.8322
 
-Recall: 0.8333
+Recall: 0.8000

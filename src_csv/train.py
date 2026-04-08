@@ -12,61 +12,87 @@ from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report,roc_auc_score,recall_score
 from xgboost import XGBClassifier
 
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Train a classification model for diabetes")
-    # argument test size and random state
-    p.add_argument("--random_state","-r",type=int,default=config.random_state, help="random state")
-    p.add_argument("--test_size","-t",type=float,default=config.test_size,help="test size")
-    # name model
-    p.add_argument("--model_name","-m",type=str,default="random_forest", help="choice model")
-    # argument randomforest
-    p.add_argument("--n_estimators","-n",type=int,default=200 , help="n_estimators")
-    p.add_argument("--criterion","-rf_c",type=str,default="gini" , help="criterion")
-    # argument  LogisticRegression
-    p.add_argument("--c_logis","-c",type=float,default=0.1,help="c in logisticregresstion")
-    p.add_argument("--max_iter","-i",type=int,default=1000,help="max_iter in logisticregresstion")
-    # argument svm
-    p.add_argument("--kernel","-k",type=str,default="rbf", help="kernel svm")
+    # common
+    p.add_argument("--random_state","-r",type=int,default=config.random_state)
+    p.add_argument("--test_size","-t",type=float,default=config.test_size)
+    p.add_argument("--model_name","-m",type=str,default="random_forest")
+
+    # RandomForest
+    p.add_argument("--n_estimators","-n",type=int,default=300)
+    p.add_argument("--criterion","-rf_c",type=str,default="gini")
+    p.add_argument("--max_depth","-md",type=int,default=None)
+
+    #  Logistic
+    p.add_argument("--c_logis","-c",type=float,default=1)
+    p.add_argument("--max_iter","-i",type=int,default=500)
+
+    #  SVM
+    p.add_argument("--kernel","-k",type=str,default="linear")
+    p.add_argument("--svm_c","-sc",type=float,default=0.1)
+    p.add_argument("--gamma","-g",type=str,default="scale")
+
+    #  XGBoost
+    p.add_argument("--xgb_n_estimators","-xn",type=int,default=200)
+    p.add_argument("--learning_rate","-lr",type=float,default=0.03)
+    p.add_argument("--xgb_max_depth","-xmd",type=int,default=3)
+    p.add_argument("--scale_pos_weight","-spw",type=float,default=1.5)
+
+    #  class weight (cho imbalance)
+    p.add_argument("--class_weight_0", type=float, default=1.0)
+    p.add_argument("--class_weight_1", type=float, default=1.5)
 
     return p.parse_args()
 
 def build_model(args):
+
+    class_weight = {
+        0: args.class_weight_0,
+        1: args.class_weight_1
+    }
+
     if args.model_name == "random_forest":
         clf = RandomForestClassifier(
             n_estimators=args.n_estimators,
-            criterion= args.criterion,
+            criterion=args.criterion,
+            max_depth=args.max_depth,
             random_state=args.random_state,
-            class_weight={0:1, 1:2}
+            class_weight=class_weight
         )
+
     elif args.model_name == "logistic":
         clf = LogisticRegression(
             C=args.c_logis,
             penalty="l2",
             solver="lbfgs",
-            class_weight={0:1, 1:2},
-            max_iter=args.max_iter
+            max_iter=args.max_iter,
+            class_weight=class_weight
         )
+
     elif args.model_name == "svm":
         clf = SVC(
             kernel=args.kernel,
-            C=1,
-            gamma="scale",
-            class_weight={0:1, 1:2},
+            C=args.svm_c,
+            gamma=args.gamma,
+            class_weight=class_weight,
             probability=True
         )
+
     elif args.model_name == "xgboost":
         clf = XGBClassifier(
-            n_estimators=200,
-            learning_rate=0.05,
-            max_depth=4,
-            scale_pos_weight=2,
+            n_estimators=args.xgb_n_estimators,
+            learning_rate=args.learning_rate,
+            max_depth=args.xgb_max_depth,
+            scale_pos_weight=args.scale_pos_weight,
             random_state=args.random_state
         )
+
     else:
-        raise ValueError(
-            f"Model '{args.model_name}' is not supported. "
-            "Choose from: random_forest, logistic, svm"
-        )
+        raise ValueError("Model not supported")
+
     return clf
 
 def main(args):
@@ -96,7 +122,7 @@ def main(args):
 
     # test model
     y_proba = pipeline.predict_proba(x_test)[:, 1]
-    threshold = 0.3  # ưu tiên recall
+    threshold = 0.4  # ưu tiên recall
     y_predict = (y_proba >= threshold).astype(int)
 
     roc_auc = roc_auc_score(y_test, y_proba)

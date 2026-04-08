@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            ```
+            <h1 class="text-center mb-3">
+                Hệ Thống Hỗ Trợ Chẩn Đoán Bệnh Võng Mạc Tiểu Đường (Diabetic Retinopathy)
+            </h1>
+
+            <p class="text-center text-muted">
+                Ứng dụng Trí Tuệ Nhân Tạo (Deep Learning) phân tích ảnh đáy mắt
+                để dự đoán mức độ bệnh võng mạc tiểu đường.
+                Kết quả chỉ mang tính tham khảo và không thay thế chẩn đoán y khoa.
+            </p>
+
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Tải Lên Ảnh Võng Mạc</h5>
+                </div>
+
+                <div class="card-body">
+
+                    <p class="text-muted">
+                        Vui lòng tải lên ảnh đáy mắt (Fundus Image) để hệ thống AI
+                        phân tích và dự đoán mức độ Diabetic Retinopathy (DR).
+                        <br>
+                        Định dạng hỗ trợ: PNG / JPG / JPEG / BMP / TIFF.
+                    </p>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="image_file" class="form-label">
+                                Chọn ảnh võng mạc
+                            </label>
+                            <input type="file" class="form-control" id="image_file" name="image_file" accept="image/*"
+                                required>
+                        </div>
+
+                        <div class="mb-3" id="preview-container" style="display: none;">
+                            <label class="form-label">Ảnh đã chọn:</label>
+                            <div>
+                                <img id="image-preview" src="#" alt="Ảnh đã chọn" class="img-fluid rounded shadow-sm"
+                                    style="max-height: 320px;" />
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            Phân Tích & Dự Đoán
+                        </button>
+                    </form>
+
+                    {% if image_file_message %}
+                    <div class="mt-3 alert alert-info">
+                        {{ image_file_message }}
+                    </div>
+                    {% endif %}
+
+                    {% if image_preview_path %}
+                    <div class="mt-4 row align-items-center">
+
+                        <div class="col-md-4">
+                            <img src="{{ url_for('uploaded_image', filename=image_preview_path) }}" alt="Ảnh võng mạc"
+                                class="img-fluid rounded shadow-sm">
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="card border-primary">
+                                <div class="card-body">
+
+                                    <h5 class="card-title">
+                                        Kết Quả Phân Tích AI
+                                    </h5>
+
+                                    <p>
+                                        <strong>Mức độ bệnh dự đoán:</strong>
+                                        {{ image_result.replace('_', ' ') if image_result else '' }}
+                                    </p>
+
+                                    <p>
+                                        <strong>Độ tin cậy mô hình:</strong>
+                                        {{ image_confidence | round(2) }}%
+                                    </p>
+
+                                    <hr>
+
+                                    <h6>Xác suất từng mức độ:</h6>
+                                    <ul class="list-unstyled">
+                                        {% for cls, prob in image_proba_dict.items() %}
+                                        <li>
+                                            <strong>{{ cls.replace('_', ' ') }}:</strong>
+                                            {{ prob | round(2) }}%
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+
+                                    <div class="alert alert-warning mt-3">
+                                        ⚠️ Kết quả chỉ mang tính hỗ trợ sàng lọc.
+                                        Người dùng nên tham khảo ý kiến bác sĩ chuyên khoa mắt.
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+    ```
+
+</div>
+{% endblock %}

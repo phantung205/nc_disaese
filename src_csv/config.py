@@ -23,6 +23,8 @@ eda_report_dir = os.path.join(report_dir,"eda")
 file_name_report  = "report_diabetes.html"
 # dir result
 dir_result = os.path.join(report_dir,"result")
+#dir parameter
+dir_parameter = os.path.join(report_dir,"parameter")
 
 # --------------------------
 # required columns

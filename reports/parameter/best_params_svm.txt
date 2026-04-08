@@ -1,0 +1,6 @@
+Best Parameters:
+C: 0.1
+gamma: scale
+kernel: linear
+
+Best Recall: 0.5699

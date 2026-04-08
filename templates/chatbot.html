@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h1 class="text-center mb-4">Chat Bot Bệnh tiểu đường</h1>
+
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Hỏi đáp về Bệnh tiểu đường</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="question" class="form-label">Câu hỏi của bạn:</label>
+                            <textarea class="form-control" id="question" name="question" rows="3"
+                                placeholder="Nhập câu hỏi về diabetic retinopathy..." required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Gửi câu hỏi</button>
+                    </form>
+
+                    {% if question %}
+                    <div class="mt-4">
+                        <h6>Câu hỏi:</h6>
+                        <p class="bg-light p-2 rounded">{{ question }}</p>
+                    </div>
+                    {% endif %}
+
+                    {% if answer %}
+                    <div class="mt-3">
+                        <h6>Trả lời:</h6>
+                        <div class="bg-success text-white p-3 rounded">
+                            {{ answer }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

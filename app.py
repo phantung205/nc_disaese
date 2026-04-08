@@ -1,8 +1,14 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
 import os
 import pandas as pd
+import cv2
+import torch
+import numpy as np
 from werkzeug.utils import secure_filename
 from src_csv import inference, config
+from src_images import config as img_config
+from src_images.model import DiabeticRetinopathy
+from chat.rag_pipeline import get_answer
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'  # Thay đổi thành key bảo mật
@@ -15,6 +21,47 @@ UPLOAD_FOLDER = os.path.join(config.base_dir, 'uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+IMAGE_MODEL_CHECKPOINT = os.path.join(img_config.model_dir, 'best_cnn.pt')
+if not os.path.exists(IMAGE_MODEL_CHECKPOINT):
+    fallback_checkpoint = os.path.join(img_config.model_dir, 'last_cnn.pt')
+    IMAGE_MODEL_CHECKPOINT = fallback_checkpoint if os.path.exists(fallback_checkpoint) else IMAGE_MODEL_CHECKPOINT
+
+
+def load_image_model():
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = DiabeticRetinopathy().to(device)
+    if not os.path.exists(IMAGE_MODEL_CHECKPOINT):
+        raise FileNotFoundError('Không tìm thấy file checkpoint cho model ảnh.')
+    checkpoint = torch.load(IMAGE_MODEL_CHECKPOINT, map_location=device)
+    model.load_state_dict(checkpoint['model'])
+    model.eval()
+    return model, device
+
+
+def predict_image(image_path):
+    model, device = load_image_model()
+    image = cv2.imread(image_path)
+    if image is None:
+        raise ValueError('Không thể đọc ảnh.')
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = cv2.resize(image, (img_config.image_size, img_config.image_size))
+    image = np.transpose(image, (2, 0, 1)) / 255.0
+    mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+    std = np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+    image = (image - mean) / std
+    image = torch.from_numpy(image).unsqueeze(0).float().to(device)
+
+    with torch.no_grad():
+        output = model(image)
+        probabilities = torch.softmax(output, dim=1).cpu().numpy()[0]
+
+    max_idx = int(np.argmax(probabilities))
+    predicted_class = img_config.categorys[max_idx]
+    confidence = float(probabilities[max_idx] * 100)
+    proba_dict = {img_config.categorys[i]: float(probabilities[i] * 100) for i in range(len(probabilities))}
+    return predicted_class, confidence, proba_dict
+
 
 @app.route('/')
 def home():
@@ -99,6 +146,41 @@ def prediction():
                          file_message=file_message,
                          form_data=request.form)
 
+@app.route('/image-prediction', methods=['GET', 'POST'])
+def image_prediction():
+    image_result = None
+    image_confidence = None
+    image_proba_dict = None
+    image_preview_path = None
+    image_file_message = None
+
+    if request.method == 'POST':
+        if 'image_file' not in request.files:
+            image_file_message = 'Không có ảnh được chọn'
+        else:
+            image_file = request.files['image_file']
+            if image_file.filename == '':
+                image_file_message = 'Không có ảnh được chọn'
+            elif image_file and image_file.filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tiff', '.gif')):
+                image_filename = secure_filename(image_file.filename)
+                image_upload_path = os.path.join(app.config['UPLOAD_FOLDER'], image_filename)
+                image_file.save(image_upload_path)
+                try:
+                    image_result, image_confidence, image_proba_dict = predict_image(image_upload_path)
+                    image_preview_path = image_filename
+                    image_file_message = 'Dự đoán ảnh hoàn tất!'
+                except Exception as e:
+                    image_file_message = f'Lỗi xử lý ảnh: {str(e)}'
+            else:
+                image_file_message = 'Chỉ chấp nhận ảnh PNG/JPG/JPEG và các định dạng ảnh hợp lệ'
+
+    return render_template('image_prediction.html',
+                           image_result=image_result,
+                           image_confidence=image_confidence,
+                           image_proba_dict=image_proba_dict,
+                           image_preview_path=image_preview_path,
+                           image_file_message=image_file_message)
+
 @app.route('/download/<filename>')
 def download_file(filename):
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -107,6 +189,15 @@ def download_file(filename):
     else:
         flash('File không tồn tại', 'error')
         return redirect(url_for('prediction'))
+
+
+@app.route('/uploads/<filename>')
+def uploaded_image(filename):
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(file_path):
+        return send_file(file_path)
+    flash('Ảnh không tồn tại', 'error')
+    return redirect(url_for('prediction'))
 
 @app.route('/statistics')
 def statistics():
@@ -120,6 +211,31 @@ def statistics():
         else:
             reports[model] = 'Report không có sẵn'
     return render_template('statistics.html', reports=reports)
+
+@app.route('/chatbot', methods=['GET', 'POST'])
+def chatbot():
+    answer = None
+    question = None
+    if request.method == 'POST':
+        question = request.form.get('question')
+        if question:
+            try:
+                answer = get_answer(question)
+            except Exception as e:
+                answer = f'Lỗi: {str(e)}'
+    return render_template('chatbot.html', question=question, answer=answer)
+
+@app.route('/chatbot/api', methods=['POST'])
+def chatbot_api():
+    data = request.get_json()
+    question = data.get('question')
+    if not question:
+        return {'error': 'No question provided'}, 400
+    try:
+        answer = get_answer(question)
+        return {'answer': answer}
+    except Exception as e:
+        return {'error': str(e)}, 500
 
 if __name__ == '__main__':
     app.run(debug=True)
