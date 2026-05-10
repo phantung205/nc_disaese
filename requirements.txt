@@ -1,0 +1,14 @@
+--index-url https://download.pytorch.org/whl/cu124
+
+torch
+torchvision
+torchaudio
+scikit-learn
+numpy
+pandas
+xgboost
+langchain_community
+flask
+langchain_core
+langchain_huggingface
+langchain_ollama

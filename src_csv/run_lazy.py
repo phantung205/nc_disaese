@@ -1,6 +1,5 @@
 from lazypredict.Supervised import LazyClassifier
 from src_csv import preprocessing
-from sklearn.metrics import recall_score
 
 x_train, x_test, y_train, y_test = preprocessing.preprocess_and_split()
 

@@ -2,6 +2,7 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from src_csv import config
 import os
+import numpy as np
 
 
 def load_data():
@@ -11,7 +12,20 @@ def  clean_raw_data(df, is_train=True):
     df = df.copy()
 
     #  xóa các cột có dữ liệu trung lặp
-    df = df.drop_duplicates()
+    if is_train:
+        df = df.drop_duplicates()
+
+    # sử lý các giá trị cột ko thể bằng 0
+    cols_with_zero = [
+        "Glucose",
+        "BloodPressure",
+        "SkinThickness",
+        "Insulin",
+        "BMI"
+    ]
+    exist_cols = [c for c in cols_with_zero if c in df.columns]
+    df[exist_cols] = df[exist_cols].astype("float64")
+    df[exist_cols] = df[exist_cols].replace(0, np.nan)
 
     # xóa các cột ko cẩn thiết
     if "..." in df.columns:

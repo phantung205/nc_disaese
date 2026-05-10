@@ -70,25 +70,25 @@ class DiabeticRetinopathy(nn.Module):
         return x
 
 
-class DiabeticRetinopathyPretrain(nn.Module):
-    def __init__(self, num_classes=len(config.categorys)):
-        super().__init__()
-
-        self.model = models.resnet34(pretrained=True)
-
-        for param in self.model.parameters():
-            param.requires_grad = False
-
-        in_features = self.model.fc.in_features
-        self.model.fc = nn.Sequential(
-            nn.Linear(in_features, 256),
-            nn.ReLU(),
-            nn.Dropout(0.5),
-            nn.Linear(256, num_classes)
-        )
-
-        for param in self.model.fc.parameters():
-            param.requires_grad = True
-
-    def forward(self, x):
-        return self.model(x)
+# class DiabeticRetinopathyPretrain(nn.Module):
+#     def __init__(self, num_classes=len(config.categorys)):
+#         super().__init__()
+#
+#         self.model = models.resnet34(pretrained=True)
+#
+#         for param in self.model.parameters():
+#             param.requires_grad = False
+#
+#         in_features = self.model.fc.in_features
+#         self.model.fc = nn.Sequential(
+#             nn.Linear(in_features, 256),
+#             nn.ReLU(),
+#             nn.Dropout(0.5),
+#             nn.Linear(256, num_classes)
+#         )
+#
+#         for param in self.model.fc.parameters():
+#             param.requires_grad = True
+#
+#     def forward(self, x):
+#         return self.model(x)

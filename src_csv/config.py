@@ -36,7 +36,7 @@ numerical_col = ["Pregnancies","Glucose","BloodPressure","SkinThickness","Insuli
 # --------------------------
 # test size và random-state
 # -------------------------
-test_size = 0.2
+test_size = 0.10
 random_state = 42
 
 # ------------------------

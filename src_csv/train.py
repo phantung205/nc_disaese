@@ -11,7 +11,7 @@ from sklearn.svm import SVC
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import classification_report,roc_auc_score,recall_score
 from xgboost import XGBClassifier
-
+# from imblearn.over_sampling import SMOTE
 
 
 def parse_args():
@@ -19,7 +19,7 @@ def parse_args():
     # common
     p.add_argument("--random_state","-r",type=int,default=config.random_state)
     p.add_argument("--test_size","-t",type=float,default=config.test_size)
-    p.add_argument("--model_name","-m",type=str,default="random_forest")
+    p.add_argument("--model_name","-m",type=str,default="xgboost")
 
     # RandomForest
     p.add_argument("--n_estimators","-n",type=int,default=300)
@@ -99,9 +99,17 @@ def main(args):
     # lấy ra dữ liệu đã chia
     x_train, x_test, y_train, y_test = preprocessing.preprocess_and_split(args.test_size,args.random_state)
 
+    #  dùng smote để cân bằng data
+    # smote = SMOTE(
+    #     sampling_strategy="auto",
+    #     k_neighbors=5,
+    #     random_state=42
+    # )
+    # x_train,y_train = smote.fit_resample(x_train,y_train)
+
     # tạo pipeline chuẩn hóa
     num_transformer = Pipeline(steps=[
-        ("imputer",SimpleImputer(strategy="median")),
+        ("imputer",SimpleImputer(strategy="mean")),
         ("scaler",StandardScaler())
     ])
 
@@ -122,7 +130,7 @@ def main(args):
 
     # test model
     y_proba = pipeline.predict_proba(x_test)[:, 1]
-    threshold = 0.4  # ưu tiên recall
+    threshold = 0.45  # ưu tiên recall
     y_predict = (y_proba >= threshold).astype(int)
 
     roc_auc = roc_auc_score(y_test, y_proba)

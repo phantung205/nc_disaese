@@ -2,13 +2,13 @@ Model: Xgboost
 
               precision    recall  f1-score   support
 
-           0       0.89      0.72      0.80        76
-           1       0.61      0.82      0.70        40
+           0       0.93      0.78      0.85        50
+           1       0.69      0.89      0.77        27
 
-    accuracy                           0.76       116
-   macro avg       0.75      0.77      0.75       116
-weighted avg       0.79      0.76      0.76       116
+    accuracy                           0.82        77
+   macro avg       0.81      0.83      0.81        77
+weighted avg       0.84      0.82      0.82        77
 
-ROC-AUC: 0.8579
+ROC-AUC: 0.8452
 
-Recall: 0.8250
+Recall: 0.8889
